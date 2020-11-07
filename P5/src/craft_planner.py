@@ -2,9 +2,16 @@ import json
 from collections import namedtuple, defaultdict, OrderedDict
 from timeit import default_timer as time
 from heapq import heappop, heappush
+import math
 
 Recipe = namedtuple('Recipe', ['name', 'check', 'effect', 'cost'])
 
+Tools = ["bench", "furnace", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "stone_axe", "iron_axe"]
+
+goal = {}
+needed_consumes = {}
+needed_requires = {}
+recipes = {}
 
 class State(OrderedDict):
     """ This class is a thin wrapper around an OrderedDict, which is simply a dictionary which keeps the order in
@@ -116,8 +123,49 @@ def graph(state):
             yield (r.name, r.effect(state), r.cost)
 
 
-def heuristic(state):
+def heuristic(current_state, next_state):
     # Implement your heuristic here!
+
+    # if you reach your goal, prioritize
+    if is_goal(next_state):
+        print("next goal")
+        return -math.inf
+
+    # don't remake Tools
+    for item, quantity in next_state.items():
+        if item in Tools:
+            if quantity > 1:
+                return math.inf
+
+    # prioritize getting requires that give you goal consumes
+    # for needed_item in needed_consumes:
+        # print("need", needed_item)
+        # if needed_consumes[needed_item] > 0:
+        #     # print("need amount", needed_consumes[needed_item])
+        #     if next_state[needed_item] > current_state[needed_item]:
+        #         print("item", needed_item, "next state", next_state[needed_item])
+        #         print("current state", current_state[needed_item])
+        #         needed_consumes[needed_item] = needed_consumes[needed_item]-next_state[needed_item]
+        #         return -math.inf
+
+    # for item in needed_requires:
+    #     for name, rule in recipes.items():
+    #         if item in rule["Produces"]:
+    #             for consumes in rule["Consumes"]:
+    #                 if consumes in current_state:
+
+
+    # prioritize getting goal consumes (getting items that complete your goal)
+    # for needed_item in needed_consumes:
+    #     print("need", needed_item, "amount", needed_consumes[needed_item])
+    #     print("have", current_state[needed_item])
+    #     print("will have", next_state[needed_item])
+    #     # if the item is in the next state, prioritize
+    #     if current_state[needed_item] < next_state[needed_item]:
+    #         # if there is enough of the item
+    #         print("next state gives items", state)
+    #         return -math.inf
+
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
@@ -141,41 +189,47 @@ def search(graph, state, is_goal, limit, heuristic):
     backpointers[state] = (None, None)
 
 
-    while time() - start_time < limit:
+    while queue and time() - start_time < limit:
 
-        while queue:
-            current_cost, current_state = heappop(queue)
+        #while queue:
+        current_cost, current_state = heappop(queue)
 
-            # Check if current node is the destination
-            if is_goal(current_state):
+        # Check if current node is the destination
+        if is_goal(current_state):
 
-                # List containing all cells from initial_position to destination
-                path = [(current_state, backpointers[current_state][1])]
+            # List containing all cells from initial_position to destination
+            path = [(current_state, backpointers[current_state][1])]
 
-                # Go backwards from destination until the source using backpointers
-                # and add all the nodes in the shortest path into a list
-                current_back = backpointers[current_state][0]
-                while current_back is not None:
-                    path.append((current_back, backpointers[current_back][1]))
-                    current_back = backpointers[current_back][0]
+            # Go backwards from destination until the source using backpointers
+            # and add all the nodes in the shortest path into a list
+            current_back = backpointers[current_state][0]
+            while current_back is not None:
+                path.append((current_back, backpointers[current_back][1]))
+                current_back = backpointers[current_back][0]
 
-                print("Compute Time:", time() - start_time)
-                print("Game Time:", costs[current_state])
-                print("Cost:", len(path)-1)
-                return path[::-1]
+            print("Compute Time:", time() - start_time)
+            print("Cost:", costs[current_state])
+            print("Len:", len(path)-1)
+            return path[::-1]
 
-            # Calculate cost from current note to all the adjacent ones
-            for adj_name, adj_state, adj_cost in graph(current_state):
-                pathcost = current_cost + adj_cost
+        # Calculate cost from current note to all the adjacent ones
+        for adj_name, adj_state, adj_cost in graph(current_state):
+            pathcost = current_cost + adj_cost
 
-                # If the cost is new
-                if adj_state not in costs or pathcost < costs[adj_state]:
-                    costs[adj_state] = pathcost
+            # print("adding to queue:", adj_name, "cost:", adj_cost)
 
-                    backpointers[adj_state] = (current_state, adj_name)
-                    heappush(queue, (pathcost, adj_state))
+            # If the cost is new
+            if adj_state not in costs or pathcost < costs[adj_state]:
+                costs[adj_state] = pathcost
+                priority = pathcost + heuristic(current_state, adj_state)
 
-        return None
+                # print("from cur state", current_state)
+                # print("adding to q", adj_state, "prio", priority)
+
+                backpointers[adj_state] = (current_state, adj_name)
+                heappush(queue, (priority, adj_state))
+
+    #return None
 
 
     # Failed to find a path
@@ -188,16 +242,16 @@ if __name__ == '__main__':
         Crafting = json.load(f)
 
     # # List of items that can be in your inventory:
-    print('All items:', Crafting['Items'])
+    # print('All items:', Crafting['Items'])
     #
-    # # List of items in your initial inventory with amounts:
+    # List of items in your initial inventory with amounts:
     print('Initial inventory:', Crafting['Initial'])
     #
     # # List of items needed to be in your inventory at the end of the plan:
-    print('Goal:',Crafting['Goal'])
+    # print('Goal:',Crafting['Goal'])
     #
     # # Dict of crafting recipes (each is a dict):
-    print('Example recipe:','craft stone_pickaxe at bench ->',Crafting['Recipes']['craft stone_pickaxe at bench'])
+    # print('Example recipe:','craft stone_pickaxe at bench ->',Crafting['Recipes']['craft stone_pickaxe at bench'])
 
     # Build rules
     all_recipes = []
@@ -209,6 +263,17 @@ if __name__ == '__main__':
 
     # Create a function which checks for the goal
     is_goal = make_goal_checker(Crafting['Goal'])
+
+    recipes = Crafting['Recipes'].copy()
+    goal = Crafting['Goal'].copy()
+    for item, quantity in goal.items():
+        for name, rule in recipes.items():
+            if item in rule["Produces"]:
+                needed_consumes = dict(rule["Consumes"])
+                needed_requires = dict(rule["Requires"])
+
+    print(needed_consumes)
+    print(needed_requires)
 
     # Initialize first state from initial inventory
     state = State({key: 0 for key in Crafting['Items']})
@@ -222,5 +287,6 @@ if __name__ == '__main__':
     if resulting_plan:
         # Print resulting plan
         for state, action in resulting_plan:
-            print('\t',state)
             print(action)
+            print('\t',state)
+            #print(action)
