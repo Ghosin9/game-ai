@@ -1,0 +1,1 @@
+take node with highest growth_rate/cost ratio
