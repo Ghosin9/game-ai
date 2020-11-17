@@ -1,7 +1,9 @@
 {
  "Initial": {},
  "Goal": {
-   "iron_pickaxe": 1
+   "cart": 2,
+   "rail": 20,
+   "ingot": 3
  },
  "Items": [
    "bench",
