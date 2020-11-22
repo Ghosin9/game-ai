@@ -2,7 +2,6 @@ import sys
 from timeit import default_timer as time
 import p3_t3
 import mcts_vanilla
-import mcts_vanilla2
 import mcts_modified
 import random_bot
 import rollout_bot
@@ -11,7 +10,6 @@ players = dict(
     random_bot=random_bot.think,
     rollout_bot=rollout_bot.think,
     mcts_vanilla=mcts_vanilla.think,
-    mcts_vanilla2=mcts_vanilla2.think,
     mcts_modified=mcts_modified.think
 )
 

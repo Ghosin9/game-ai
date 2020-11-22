@@ -1,0 +1,15 @@
+Player1 = vanilla(100), Player2 = vanilla(x)
+
+1000 = Final win counts: {'draw': 1, 1: 4, 2: 95}
+500 = Final win counts: {'draw': 0, 1: 66, 2: 34}
+100 = Final win counts: {'draw': 1, 1: 56, 2: 43}
+50 = Final win counts: {'draw': 4, 1: 55, 2: 41}
+10 = Final win counts: {'draw': 1, 1: 93, 2: 6}
+
+It looks like the bot with the larger level of nodes tends to beat the lower one.
+The closer the levels are, the less the disparity is in win rate.
+When node levels were both 100, the bots were pretty close to each other in score,
+and the diffenrences in result are small enough that they could probably be attributed
+to chance. This makes sense, because the larger node level means more accurate win
+rates to pick from. Bigger differences in node levl will also lead to more changes in 
+accuracy.
